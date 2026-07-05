@@ -271,6 +271,9 @@ Imported.TerraxLighting = true;
 	var averagetime = [];
 	var averagetimecount = 0;
 
+	//Smooth flashlight
+	var flashlightAngle = 0;
+
     var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
         _Game_Interpreter_pluginCommand.call(this, command, args);
@@ -1427,7 +1430,23 @@ Imported.TerraxLighting = true;
 						var dy = $gameMap.displayY();
 						var px = $gamePlayer._realX;
 						var py = $gamePlayer._realY;
-						var pd = $gamePlayer._direction;
+						var targetAngle;
+
+						switch ($gamePlayer._direction) {
+							case 6: targetAngle = 0; break;                   // Right
+							case 2: targetAngle = Math.PI / 2; break;         // Down
+							case 4: targetAngle = Math.PI; break;             // Left
+							case 8: targetAngle = -Math.PI / 2; break;        // Up
+						}
+
+						// Rotate the shortest way
+						var diff = targetAngle - flashlightAngle;
+
+						while (diff > Math.PI) diff -= Math.PI * 2;
+						while (diff < -Math.PI) diff += Math.PI * 2;
+
+						// Rotation speed
+						flashlightAngle += diff * 0.25;
 
 						//Graphics.Debug('Screen',pw+" "+ph+" "+dx+" "+dy+" "+px+" "+py);
 
@@ -1457,7 +1476,17 @@ Imported.TerraxLighting = true;
 
 						if (iplayer_radius > 0) {
 							if (playerflashlight == true) {
-								this._maskBitmap.radialgradientFillRect2(x1, y1, 20, iplayer_radius, playercolor, '#000000', pd, flashlightlength, flashlightwidth);
+								this._maskBitmap.radialgradientFillRect2(
+									x1,
+									y1,
+									20,
+									iplayer_radius,
+									playercolor,
+									'#000000',
+									flashlightAngle,
+									flashlightlength,
+									flashlightwidth
+								);
 							}
 							y1 = y1 - flashlightoffset;
 							if (iplayer_radius < 100) {
@@ -2840,6 +2869,8 @@ Imported.TerraxLighting = true;
 	            	y1 = y1 - cone*0.6;
 	       	    	break;
 			} 
+			x1 = x1 + Math.cos(direction) * cone * 0.6;
+			y1 = y1 + Math.sin(direction) * cone * 0.6;
 	  		  		
 
 		  	grad = context.createRadialGradient(x1, y1, r1, x1, y1, r2);
